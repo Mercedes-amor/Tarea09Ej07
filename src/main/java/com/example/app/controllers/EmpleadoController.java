@@ -15,12 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.example.app.domain.Empleado;
 import com.example.app.domain.Genero;
-import com.example.app.exceptions.EmpleadoNotFoundException;
-import com.example.app.exceptions.EmpleadosEmptyException;
 import com.example.app.services.EmpleadoService;
 
 import jakarta.validation.Valid;
@@ -34,60 +31,26 @@ public class EmpleadoController {
     @Autowired(required = true)
     EmpleadoService empleadoService;
 
+    //MOSTRAR TODOS LOS EMPLEADOS
     @GetMapping("/empleados")
     public List<Empleado> showList() {
 
         // Primero instanciamos la lista de empleados
-        List<Empleado> listaEmpleados;
-
-        // Usamos el método obtenerTodos() dentro de un try-catch
-        // El catch captura la excepción y la lanza si es el caso
-        try {
-            listaEmpleados = empleadoService.obtenerTodos(); // Lanza 200 si todo ok
-        } catch (EmpleadosEmptyException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
-        return listaEmpleados;
+        return empleadoService.obtenerTodos();
     }
 
-    // Aquí ya declaramos que siempre devolverá un Empleado, ya que si hay alguna
-    // excepción el catch la recogerá y lanzará
+    //MOSTRAR UN EMPLEADO
     @GetMapping("/empleado/{id}")
-    public Empleado showOne(@PathVariable Long id) {
-
-        // Declaramos la variable para almacenar el empleado
-        Empleado empleado;
-
-        try {
-            empleado = empleadoService.obtenerPorId(id); // Lanza 200 si todo ok
-        } catch (EmpleadoNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
-        return empleado;
+    public ResponseEntity<?> showOne(@PathVariable Long id) {
+        Empleado empleado = empleadoService.obtenerPorId(id);
+        return ResponseEntity.ok(empleado);
     }
 
+    //AÑADIR UN EMPLEADO
     @PostMapping("/empleado/")
-
-    // Añadimos el @RequestBody y eliminamos BindingResult (ya no aplicable)
     public ResponseEntity<?> showNew(@Valid @RequestBody Empleado empleadoForm) {
-
-        // Si los datos no son correctos @Valid ya lanzará error 400
-        // Por ello no necesitamos BindingResult
-
-        // Creamos el empleado
         Empleado empleado = empleadoService.add(empleadoForm);
-
-        // Si creamos correctamente el empleado
-        if (empleado != null) {
-            // Devolvemos status CREATED (201) y el empleado
-            return ResponseEntity.status(HttpStatus.CREATED).body(empleado);
-
-        } else {
-            // Si no se crea correctamente el empleado devolvemos status BAD_REQUEST
-            // versión equivalente: ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            return ResponseEntity.badRequest().body("Error en alta empleado");
-        }
-
+        return ResponseEntity.status(HttpStatus.CREATED).body(empleado);
     }
 
     // EDITAR EMPLEADO
@@ -95,27 +58,15 @@ public class EmpleadoController {
     public ResponseEntity<?> showEdit(@PathVariable Long id,
             @Valid @RequestBody Empleado empleadoForm) {
 
-        try {
-            Empleado empleadoAEditar = empleadoService.actualizar(empleadoForm);
-            return ResponseEntity.status(HttpStatus.OK).body(empleadoAEditar);
-        } catch (EmpleadoNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
-
+        Empleado empleadoAEditar = empleadoService.actualizar(empleadoForm);
+        return ResponseEntity.status(HttpStatus.OK).body(empleadoAEditar);
     }
 
     // BORRAR EMPLEADO
     @DeleteMapping("/empleado/{id}")
     public ResponseEntity<?> showDelete(@PathVariable Long id) {
-
-        try {
-            empleadoService.eliminarPorId(id);
-            return ResponseEntity.status(HttpStatus.OK).build();
-
-        } catch (EmpleadoNotFoundException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
-       
+        empleadoService.eliminarPorId(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build(); // cod 204
     }
 
     // BUSCADORES
